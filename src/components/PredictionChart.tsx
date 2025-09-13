@@ -1,5 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, AreaChart, Area } from "recharts";
 import { TrendingUp } from "lucide-react";
 
 interface PredictionChartProps {
@@ -100,6 +100,43 @@ export function PredictionChart({ predictions }: PredictionChartProps) {
               <Bar dataKey="cloudCover" fill="#6b7280" />
               <Bar dataKey="irradiance" fill="#f59e0b" />
             </BarChart>
+          </ResponsiveContainer>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Prediction vs Time</CardTitle>
+          <CardDescription>
+            Time series of predicted power based on your history
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ResponsiveContainer width="100%" height={300}>
+            <AreaChart
+              data={predictions
+                .slice(0, 30)
+                .reverse()
+                .map((pred) => ({
+                  timestamp: new Date(pred.timestamp).toLocaleTimeString(),
+                  power: pred.predictedPowerKw,
+                }))}
+            >
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="timestamp" />
+              <YAxis />
+              <Tooltip
+                formatter={(value) => [`${Number(value).toFixed(2)} kW`, "Power"]}
+              />
+              <Area
+                type="monotone"
+                dataKey="power"
+                stroke="#f59e0b"
+                fill="#f59e0b"
+                fillOpacity={0.2}
+                strokeWidth={2}
+              />
+            </AreaChart>
           </ResponsiveContainer>
         </CardContent>
       </Card>
