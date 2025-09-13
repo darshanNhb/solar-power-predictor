@@ -1,5 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, AreaChart, Area } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from "recharts";
 import { TrendingUp } from "lucide-react";
 
 interface PredictionChartProps {
@@ -106,37 +106,43 @@ export function PredictionChart({ predictions }: PredictionChartProps) {
 
       <Card>
         <CardHeader>
-          <CardTitle>Prediction vs Time</CardTitle>
+          <CardTitle>Prediction vs Temperature</CardTitle>
           <CardDescription>
-            Time series of predicted power based on your history
+            Relationship between predicted power and ambient temperature
           </CardDescription>
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={300}>
-            <AreaChart
-              data={predictions
+            <LineChart
+              data={[...predictions]
                 .slice(0, 30)
                 .reverse()
                 .map((pred) => ({
-                  timestamp: new Date(pred.timestamp).toLocaleTimeString(),
+                  temperature: pred.weatherData.temperature,
                   power: pred.predictedPowerKw,
-                }))}
+                }))
+                // Sort by temperature for a cleaner line
+                .sort((a, b) => a.temperature - b.temperature)}
             >
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="timestamp" />
-              <YAxis />
+              <XAxis dataKey="temperature" label={{ value: "Temperature (°C)", position: "insideBottom", offset: -5 }} />
+              <YAxis label={{ value: "Power (kW)", angle: -90, position: "insideLeft" }} />
               <Tooltip
-                formatter={(value) => [`${Number(value).toFixed(2)} kW`, "Power"]}
+                formatter={(value, name) =>
+                  name === "power"
+                    ? [`${Number(value).toFixed(2)} kW`, "Power"]
+                    : [`${Number(value).toFixed(1)} °C`, "Temperature"]
+                }
               />
-              <Area
+              <Line
                 type="monotone"
                 dataKey="power"
                 stroke="#f59e0b"
-                fill="#f59e0b"
-                fillOpacity={0.2}
                 strokeWidth={2}
+                dot={{ r: 3, strokeWidth: 1, fill: "#f59e0b" }}
+                activeDot={{ r: 5 }}
               />
-            </AreaChart>
+            </LineChart>
           </ResponsiveContainer>
         </CardContent>
       </Card>
