@@ -32,12 +32,42 @@ const schema = defineSchema(
       role: v.optional(roleValidator), // role of the user. do not remove
     }).index("email", ["email"]), // index for the email. do not remove or modify
 
-    // add other tables here
+    // Solar power predictions table
+    predictions: defineTable({
+      userId: v.optional(v.id("users")),
+      latitude: v.number(),
+      longitude: v.number(),
+      tilt: v.number(),
+      azimuth: v.number(),
+      predictedPowerKw: v.number(),
+      timestamp: v.string(),
+      weatherData: v.object({
+        temperature: v.number(),
+        humidity: v.number(),
+        pressure: v.number(),
+        cloudCover: v.number(),
+        windSpeed: v.number(),
+        solarIrradiance: v.number(),
+      }),
+      solarGeometry: v.object({
+        zenith: v.number(),
+        angleOfIncidence: v.number(),
+      }),
+    }).index("by_user", ["userId"]),
 
-    // tableName: defineTable({
-    //   ...
-    //   // table fields
-    // }).index("by_field", ["field"])
+    // Optimal configurations table
+    optimizations: defineTable({
+      userId: v.optional(v.id("users")),
+      latitude: v.number(),
+      longitude: v.number(),
+      optimalTilt: v.number(),
+      optimalAzimuth: v.number(),
+      maxPowerKw: v.number(),
+      currentTilt: v.number(),
+      currentAzimuth: v.number(),
+      currentPowerKw: v.number(),
+      improvementPercentage: v.number(),
+    }).index("by_user", ["userId"]),
   },
   {
     schemaValidation: false,
