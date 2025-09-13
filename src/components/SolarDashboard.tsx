@@ -27,6 +27,7 @@ import {
   Target
 } from "lucide-react";
 import { OptimizationResults } from "./OptimizationResults";
+import { PredictionChart } from "./PredictionChart";
 
 export function SolarDashboard() {
   const { user } = useAuth();
@@ -379,6 +380,8 @@ export function SolarDashboard() {
             {optimization && (
               <OptimizationResults optimization={optimization} />
             )}
+
+            <PredictionChart predictions={userPredictions ?? []} />
           </div>
         </div>
       </motion.div>
