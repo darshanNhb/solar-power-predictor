@@ -24,10 +24,19 @@ import {
   Download,
   Loader2,
   RotateCcw,
-  Target
+  Target,
+  Trash2
 } from "lucide-react";
 import { OptimizationResults } from "./OptimizationResults";
 import { PredictionChart } from "./PredictionChart";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
+} from "@/components/ui/table";
 
 export function SolarDashboard() {
   const { user } = useAuth();
@@ -48,12 +57,23 @@ export function SolarDashboard() {
   const userPredictions = useQuery(api.solarQueries.getUserPredictions, { limit: 20 });
   const userOptimizations = useQuery(api.solarQueries.getUserOptimizations, { limit: 5 });
   const clearUserPredictions = useMutation(api.solarQueries.clearUserPredictions);
+  const deletePredictionMut = useMutation(api.solarQueries.deletePrediction);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({
       ...prev,
       [field]: parseFloat(value) || 0
     }));
+  };
+
+  const handleDeletePrediction = async (id: string) => {
+    try {
+      await deletePredictionMut({ id: id as any });
+      toast.success("Prediction deleted");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to delete prediction");
+    }
   };
 
   const handlePredict = async () => {
@@ -379,6 +399,61 @@ export function SolarDashboard() {
 
             {optimization && (
               <OptimizationResults optimization={optimization} />
+            )}
+
+            {userPredictions && userPredictions.length > 0 && (
+              <Card id="history">
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <span>Prediction History</span>
+                    <Badge variant="outline">{userPredictions.length} records</Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Time</TableHead>
+                        <TableHead>Lat</TableHead>
+                        <TableHead>Lon</TableHead>
+                        <TableHead>Tilt</TableHead>
+                        <TableHead>Azimuth</TableHead>
+                        <TableHead>Capacity (kW)</TableHead>
+                        <TableHead>Power (kW)</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {userPredictions.map((p) => (
+                        <TableRow key={p._id}>
+                          <TableCell className="whitespace-nowrap">
+                            {new Date(p.timestamp).toLocaleString()}
+                          </TableCell>
+                          <TableCell>{p.latitude.toFixed(2)}</TableCell>
+                          <TableCell>{p.longitude.toFixed(2)}</TableCell>
+                          <TableCell>{p.tilt}</TableCell>
+                          <TableCell>{p.azimuth}</TableCell>
+                          <TableCell>{(p.systemCapacityKw ?? 0).toFixed(1)}</TableCell>
+                          <TableCell className="font-semibold text-green-600">
+                            {p.predictedPowerKw.toFixed(2)}
+                          </TableCell>
+                          <TableCell>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDeletePrediction(p._id)}
+                              className="text-red-600 border-red-200 hover:bg-red-50"
+                              title="Delete"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
             )}
 
             <PredictionChart predictions={userPredictions ?? []} />
