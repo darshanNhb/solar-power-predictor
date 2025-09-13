@@ -103,9 +103,8 @@ function calculateSolarGeometry(lat: number, lon: number, tilt: number, azimuth:
   return { zenith, angleOfIncidence };
 }
 
-// ML Model prediction (simplified version of your trained model)
-function predictPowerOutput(features: any) {
-  // Capacity-aware power calculation
+// ML Model prediction (supports simple or advanced)
+function predictPowerOutput(features: any, mode: "simple" | "advanced") {
   const {
     temperature,
     humidity,
@@ -116,33 +115,33 @@ function predictPowerOutput(features: any) {
     systemCapacityKw,
   } = features;
 
-  // Fallbacks to avoid NaN/undefined cases
   const irradiance = typeof solarIrradiance === "number" ? solarIrradiance : 0;
+  const capacity = typeof systemCapacityKw === "number" ? systemCapacityKw : 5;
+
+  // Simple mode: match baseline (no derates)
+  if (mode === "simple") {
+    return Math.max(0, (irradiance / 1000) * capacity);
+  }
+
+  // Advanced mode (existing logic)
   const temp = typeof temperature === "number" ? temperature : 25;
   const cover = typeof cloudCover === "number" ? cloudCover : 0;
   const z = typeof zenith === "number" ? zenith : 90;
   const inc = typeof angleOfIncidence === "number" ? angleOfIncidence : 90;
-  const capacity = typeof systemCapacityKw === "number" ? systemCapacityKw : 5;
 
-  // Base power for the given capacity (kW) from plane-of-array irradiance
   let basePower = (irradiance / 1000) * capacity;
 
-  // Temperature coefficient (panels lose efficiency in heat), clamp minimum
   const tempCoeff = 1 - (temp - 25) * 0.004;
   basePower *= Math.max(0.5, tempCoeff);
 
-  // Cloud cover reduction
   basePower *= 1 - (cover / 100) * 0.8;
 
-  // Solar angle efficiency
   const angleEfficiency = Math.max(0, Math.cos((inc * Math.PI) / 180));
   basePower *= angleEfficiency;
 
-  // Zenith angle factor (low sun penalty)
   if (z > 85) basePower *= 0.1;
   else if (z > 70) basePower *= 0.5;
 
-  // Humidity slight reduction
   basePower *= 1 - ((typeof humidity === "number" ? humidity : 0) / 100) * 0.1;
 
   return Math.max(0, basePower);
@@ -154,9 +153,10 @@ export const predictSolarPower = action({
     longitude: v.number(),
     tilt: v.number(),
     azimuth: v.number(),
-    // New: capacity
     systemCapacityKw: v.number(),
     userId: v.optional(v.id("users")),
+    // Add: calculation mode (optional, default advanced)
+    calculationMode: v.optional(v.string()),
   },
   handler: async (ctx, args): Promise<any> => {
     try {
@@ -181,7 +181,11 @@ export const predictSolarPower = action({
         windSpeed: weather.windSpeed,
       };
 
-      const predictedPower = predictPowerOutput(features);
+      const mode = (args.calculationMode === "simple" ? "simple" : "advanced") as
+        | "simple"
+        | "advanced";
+
+      const predictedPower = predictPowerOutput(features, mode);
 
       const predictionId: any = await ctx.runMutation(
         internal.solarQueries.storePrediction,
@@ -273,7 +277,7 @@ export const optimizePanelConfiguration = action({
             windSpeed: weather.windSpeed,
           };
 
-          const power = predictPowerOutput(features);
+          const power = predictPowerOutput(features, "advanced");
 
           if (power > maxPower) {
             maxPower = power;
@@ -304,7 +308,7 @@ export const optimizePanelConfiguration = action({
         pressure: currentWeather.pressure,
         windSpeed: currentWeather.windSpeed,
       };
-      const currentPower = predictPowerOutput(currentFeatures);
+      const currentPower = predictPowerOutput(currentFeatures, "advanced");
 
       const improvementPercentage =
         currentPower > 0 ? ((maxPower - currentPower) / currentPower) * 100 : 0;

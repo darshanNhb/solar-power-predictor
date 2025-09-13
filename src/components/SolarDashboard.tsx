@@ -37,6 +37,7 @@ import {
   TableHeader,
   TableRow
 } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export function SolarDashboard() {
   const { user } = useAuth();
@@ -51,6 +52,7 @@ export function SolarDashboard() {
   const [optimization, setOptimization] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isOptimizing, setIsOptimizing] = useState(false);
+  const [calculationMode, setCalculationMode] = useState<"advanced" | "simple">("advanced");
 
   const predictSolarPower = useAction(api.solarPrediction.predictSolarPower);
   const optimizePanelConfiguration = useAction(api.solarPrediction.optimizePanelConfiguration);
@@ -85,7 +87,8 @@ export function SolarDashboard() {
         tilt: formData.tilt,
         azimuth: formData.azimuth,
         systemCapacityKw: formData.systemCapacityKw,
-        userId: user?._id
+        userId: user?._id,
+        calculationMode,
       });
       setPrediction(result);
       toast.success("Solar power prediction completed!");
@@ -210,6 +213,23 @@ export function SolarDashboard() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* Calculation Mode */}
+              <div>
+                <Label htmlFor="mode">Calculation Mode</Label>
+                <Select
+                  value={calculationMode}
+                  onValueChange={(v) => setCalculationMode(v as "advanced" | "simple")}
+                >
+                  <SelectTrigger id="mode" className="w-full">
+                    <SelectValue placeholder="Select mode" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="advanced">Advanced (realistic)</SelectItem>
+                    <SelectItem value="simple">Simple (capacity × irradiance)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="latitude">Latitude</Label>
