@@ -12,35 +12,71 @@ async function getCurrentWeather(lat: number, lon: number) {
     longitude: lon.toString(),
     current: [
       "temperature_2m",
-      "relative_humidity_2m", 
+      "relative_humidity_2m",
       "surface_pressure",
       "precipitation",
       "snowfall",
       "cloudcover",
       "cloudcover_high",
-      "cloudcover_mid", 
+      "cloudcover_mid",
       "cloudcover_low",
       "shortwave_radiation",
       "windspeed_10m",
       "winddirection_10m",
       "windspeed_80m",
-      "winddirection_80m"
+      "winddirection_80m",
     ].join(","),
-    timezone: "auto"
+    // Include hourly to provide a daylight fallback when current irradiance is 0 (e.g. at night)
+    hourly: ["shortwave_radiation", "cloudcover"].join(","),
+    timezone: "auto",
   });
 
   const response = await fetch(`${url}?${params}`);
   const data = await response.json();
-  
+
+  // Defaults from current conditions
+  let solarIrradiance: number | null = data.current?.shortwave_radiation ?? null;
+  let timestamp: string | null = data.current?.time ?? null;
+  let cloudCover: number | null = data.current?.cloudcover ?? null;
+
+  // If current irradiance is zero or missing (night), use the max irradiance in the next 24 hours
+  if (!solarIrradiance || solarIrradiance <= 0) {
+    const hours: string[] | undefined = data.hourly?.time;
+    const swr: number[] | undefined = data.hourly?.shortwave_radiation;
+    const cc: number[] | undefined = data.hourly?.cloudcover;
+
+    if (hours && swr && swr.length === hours.length && swr.length > 0) {
+      // Look ahead up to 24 hours for the best daylight irradiance
+      const nowIdx = hours.findIndex((t) => t === data.current?.time);
+      const start = Math.max(0, nowIdx === -1 ? 0 : nowIdx);
+      const end = Math.min(swr.length, start + 24);
+
+      let maxIdx = start;
+      let maxVal = -Infinity;
+      for (let i = start; i < end; i++) {
+        if (typeof swr[i] === "number" && swr[i] > maxVal) {
+          maxVal = swr[i];
+          maxIdx = i;
+        }
+      }
+
+      if (isFinite(maxVal) && maxVal > 0) {
+        solarIrradiance = maxVal;
+        timestamp = hours[maxIdx] ?? timestamp;
+        cloudCover = (cc && typeof cc[maxIdx] === "number") ? cc[maxIdx] : cloudCover;
+      }
+    }
+  }
+
   return {
-    temperature: data.current.temperature_2m,
-    humidity: data.current.relative_humidity_2m,
-    pressure: data.current.surface_pressure,
-    cloudCover: data.current.cloudcover,
-    windSpeed: data.current.windspeed_10m,
-    solarIrradiance: data.current.shortwave_radiation,
-    timestamp: data.current.time,
-    rawData: data.current
+    temperature: data.current?.temperature_2m,
+    humidity: data.current?.relative_humidity_2m,
+    pressure: data.current?.surface_pressure,
+    cloudCover: cloudCover ?? data.current?.cloudcover ?? 0,
+    windSpeed: data.current?.windspeed_10m,
+    solarIrradiance: typeof solarIrradiance === "number" ? solarIrradiance : 0,
+    timestamp: timestamp ?? new Date().toISOString(),
+    rawData: data,
   };
 }
 
