@@ -26,18 +26,10 @@ import {
   RotateCcw,
   Target
 } from "lucide-react";
-import { PredictionChart } from "./PredictionChart";
 import { OptimizationResults } from "./OptimizationResults";
-import { useLocation, useNavigate } from "react-router";
 
 export function SolarDashboard() {
   const { user } = useAuth();
-  const location = useLocation();
-  const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<string>(() => {
-    const hash = location.hash.replace("#", "");
-    return hash === "visuals" ? "chart" : hash === "history" ? "history" : "prediction";
-  });
   const [formData, setFormData] = useState({
     latitude: 23.02,
     longitude: 72.57,
@@ -54,7 +46,6 @@ export function SolarDashboard() {
   const optimizePanelConfiguration = useAction(api.solarPrediction.optimizePanelConfiguration);
   const userPredictions = useQuery(api.solarQueries.getUserPredictions, { limit: 20 });
   const userOptimizations = useQuery(api.solarQueries.getUserOptimizations, { limit: 5 });
-  const deletePrediction = useMutation(api.solarQueries.deletePrediction);
   const clearUserPredictions = useMutation(api.solarQueries.clearUserPredictions);
 
   const handleInputChange = (field: string, value: string) => {
@@ -106,32 +97,6 @@ export function SolarDashboard() {
     }
   };
 
-  const handleDeletePrediction = async (id: string) => {
-    try {
-      await deletePrediction({ id: id as any });
-      toast.success("Prediction deleted");
-    } catch (e) {
-      toast.error("Failed to delete prediction");
-      console.error(e);
-    }
-  };
-
-  const handleClearHistory = async () => {
-    if (!userPredictions?.length) {
-      toast.info("No predictions to clear");
-      return;
-    }
-    const ok = window.confirm("Clear all prediction history? This cannot be undone.");
-    if (!ok) return;
-    try {
-      await clearUserPredictions({});
-      toast.success("Prediction history cleared");
-    } catch (e) {
-      toast.error("Failed to clear history");
-      console.error(e);
-    }
-  };
-
   const handleClear = () => {
     setPrediction(null);
     setOptimization(null);
@@ -143,6 +108,16 @@ export function SolarDashboard() {
       systemCapacityKw: 5,
     });
     toast.info("Results cleared");
+  };
+
+  const handleClearHistory = async () => {
+    try {
+      await clearUserPredictions({});
+      toast.success("Prediction history cleared");
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to clear history");
+    }
   };
 
   const downloadCSV = () => {
@@ -170,7 +145,6 @@ export function SolarDashboard() {
 
   return (
     <div className="container mx-auto p-6 max-w-7xl">
-      <div id="prediction" />
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -405,79 +379,6 @@ export function SolarDashboard() {
             {optimization && (
               <OptimizationResults optimization={optimization} />
             )}
-
-            <Tabs value={activeTab === "prediction" ? "history" : activeTab} onValueChange={(v) => {
-              const hash = v === "chart" ? "visuals" : "history";
-              setActiveTab(v);
-              navigate(`/dashboard#${hash}`, { replace: true });
-            }} className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="history">Prediction History</TabsTrigger>
-                <TabsTrigger value="chart">Visualization</TabsTrigger>
-              </TabsList>
-              
-              <div id="history" />
-              <TabsContent value="history" className="space-y-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Recent Predictions</CardTitle>
-                    <CardDescription>
-                      Your latest solar power predictions
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {userPredictions && userPredictions.length > 0 ? (
-                      <div className="space-y-3 max-h-96 overflow-y-auto">
-                        {userPredictions.map((pred, index) => (
-                          <motion.div
-                            key={pred._id}
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: index * 0.1 }}
-                            className="flex items-center justify-between p-3 border rounded-lg"
-                          >
-                            <div className="flex items-center gap-3">
-                              <Badge variant="secondary">
-                                {pred.predictedPowerKw.toFixed(2)} kW
-                              </Badge>
-                              <div className="text-sm">
-                                <div className="font-medium">
-                                  {pred.latitude.toFixed(2)}, {pred.longitude.toFixed(2)}
-                                </div>
-                                <div className="text-muted-foreground">
-                                  Tilt: {pred.tilt}° | Azimuth: {pred.azimuth}°
-                                </div>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-3">
-                              <div className="text-xs text-muted-foreground">
-                                {new Date(pred.timestamp).toLocaleString()}
-                              </div>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleDeletePrediction(pred._id)}
-                              >
-                                Delete
-                              </Button>
-                            </div>
-                          </motion.div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-8 text-muted-foreground">
-                        No predictions yet. Make your first prediction above!
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              
-              <div id="visuals" />
-              <TabsContent value="chart">
-                <PredictionChart predictions={userPredictions || []} />
-              </TabsContent>
-            </Tabs>
           </div>
         </div>
       </motion.div>

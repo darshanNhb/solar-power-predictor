@@ -47,17 +47,8 @@ export default function Navbar() {
           <NavLink to="/dashboard#prediction" className={({ isActive }) => `${linkBase} ${location.pathname === "/dashboard" && location.hash === "#prediction" ? activeClass : inactiveClass}`}>
             Prediction
           </NavLink>
-          <NavLink to="/dashboard#history" className={({ isActive }) => `${linkBase} ${location.pathname === "/dashboard" && location.hash === "#history" ? activeClass : inactiveClass}`}>
-            History
-          </NavLink>
-          <NavLink to="/dashboard#visuals" className={({ isActive }) => `${linkBase} ${location.pathname === "/dashboard" && location.hash === "#visuals" ? activeClass : inactiveClass}`}>
-            Visuals
-          </NavLink>
           <NavLink to="/#about" className={({ isActive }) => `${linkBase} ${isActive ? activeClass : inactiveClass}`}>
             About
-          </NavLink>
-          <NavLink to="/#contact" className={({ isActive }) => `${linkBase} ${isActive ? activeClass : inactiveClass}`}>
-            Contact
           </NavLink>
         </div>
 
