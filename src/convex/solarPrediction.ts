@@ -183,9 +183,7 @@ export const predictSolarPower = action({
         windSpeed: weather.windSpeed,
       };
 
-      const mode = (args.calculationMode === "simple" ? "simple" : "advanced") as
-        | "simple"
-        | "advanced";
+      const mode = "simple" as "simple" | "advanced";
 
       const rawPower = predictPowerOutput(features, mode);
       const factor =

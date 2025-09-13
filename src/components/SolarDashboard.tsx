@@ -224,7 +224,7 @@ export function SolarDashboard() {
                 <Label htmlFor="mode">Calculation Mode</Label>
                 <Select
                   value={calculationMode}
-                  onValueChange={(v) => setCalculationMode(v as "advanced" | "simple")}
+                  onValueChange={() => setCalculationMode("simple")}
                 >
                   <SelectTrigger id="mode" className="w-full">
                     <SelectValue placeholder="Select mode" />
