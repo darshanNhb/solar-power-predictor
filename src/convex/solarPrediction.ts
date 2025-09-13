@@ -258,11 +258,13 @@ export const optimizePanelConfiguration = action({
       let optimalTilt = args.currentTilt;
       let optimalAzimuth = args.currentAzimuth;
 
+      // Fetch weather once to keep optimization consistent with the main prediction
+      const weather = await getCurrentWeather(args.latitude, args.longitude);
+
       // Test different tilt angles (0-60 degrees)
       for (let tilt = 0; tilt <= 60; tilt += 5) {
         // Test different azimuth angles (120-240 degrees)
         for (let azimuth = 120; azimuth <= 240; azimuth += 10) {
-          const weather = await getCurrentWeather(args.latitude, args.longitude);
           const solarGeometry = calculateSolarGeometry(
             args.latitude,
             args.longitude,
@@ -282,7 +284,8 @@ export const optimizePanelConfiguration = action({
             windSpeed: weather.windSpeed,
           };
 
-          const power = predictPowerOutput(features, "advanced");
+          // Use simple model to match user's trained model
+          const power = predictPowerOutput(features, "simple");
 
           if (power > maxPower) {
             maxPower = power;
@@ -292,10 +295,7 @@ export const optimizePanelConfiguration = action({
         }
       }
 
-      const currentWeather = await getCurrentWeather(
-        args.latitude,
-        args.longitude
-      );
+      // Current configuration using the same weather snapshot for consistency
       const currentGeometry = calculateSolarGeometry(
         args.latitude,
         args.longitude,
@@ -303,17 +303,17 @@ export const optimizePanelConfiguration = action({
         args.currentAzimuth
       );
       const currentFeatures = {
-        temperature: currentWeather.temperature,
-        humidity: currentWeather.humidity,
-        solarIrradiance: currentWeather.solarIrradiance,
-        cloudCover: currentWeather.cloudCover,
+        temperature: weather.temperature,
+        humidity: weather.humidity,
+        solarIrradiance: weather.solarIrradiance,
+        cloudCover: weather.cloudCover,
         zenith: currentGeometry.zenith,
         angleOfIncidence: currentGeometry.angleOfIncidence,
         systemCapacityKw: args.systemCapacityKw,
-        pressure: currentWeather.pressure,
-        windSpeed: currentWeather.windSpeed,
+        pressure: weather.pressure,
+        windSpeed: weather.windSpeed,
       };
-      const currentPower = predictPowerOutput(currentFeatures, "advanced");
+      const currentPower = predictPowerOutput(currentFeatures, "simple");
 
       const improvementPercentage =
         currentPower > 0 ? ((maxPower - currentPower) / currentPower) * 100 : 0;
