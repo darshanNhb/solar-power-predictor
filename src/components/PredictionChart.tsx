@@ -1,5 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, ScatterChart, Scatter } from "recharts";
 import { TrendingUp } from "lucide-react";
 
 interface PredictionChartProps {
@@ -45,34 +45,45 @@ export function PredictionChart({ predictions }: PredictionChartProps) {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5" />
-            Power Output Trend
-          </CardTitle>
+          <CardTitle>Prediction vs Solar Irradiance</CardTitle>
           <CardDescription>
-            Recent predictions showing power output over time
+            Relationship between predicted power and incoming solar irradiance
           </CardDescription>
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={chartData}>
+            <ScatterChart>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="timestamp" />
-              <YAxis />
-              <Tooltip 
-                formatter={(value, name) => [
-                  `${Number(value).toFixed(2)} ${name === 'power' ? 'kW' : name === 'temperature' ? '°C' : 'W/m²'}`,
-                  name === 'power' ? 'Power Output' : name === 'temperature' ? 'Temperature' : 'Solar Irradiance'
-                ]}
+              <XAxis
+                type="number"
+                dataKey="irradiance"
+                name="Irradiance"
+                unit=" W/m²"
               />
-              <Line 
-                type="monotone" 
-                dataKey="power" 
-                stroke="#f59e0b" 
-                strokeWidth={3}
-                dot={{ fill: '#f59e0b', strokeWidth: 2, r: 4 }}
+              <YAxis
+                type="number"
+                dataKey="power"
+                name="Power"
+                unit=" kW"
               />
-            </LineChart>
+              <Tooltip
+                cursor={{ strokeDasharray: "3 3" }}
+                formatter={(value, name) =>
+                  name === "power"
+                    ? [`${Number(value).toFixed(2)} kW`, "Power"]
+                    : [`${Number(value).toFixed(0)} W/m²`, "Irradiance"]
+                }
+              />
+              <Scatter
+                data={[...predictions]
+                  .slice(0, 50)
+                  .map((p) => ({
+                    irradiance: p.weatherData.solarIrradiance,
+                    power: p.predictedPowerKw,
+                  }))}
+                fill="#f59e0b"
+              />
+            </ScatterChart>
           </ResponsiveContainer>
         </CardContent>
       </Card>
