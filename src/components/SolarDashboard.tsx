@@ -35,7 +35,8 @@ export function SolarDashboard() {
     latitude: 23.02,
     longitude: 72.57,
     tilt: 25,
-    azimuth: 180
+    azimuth: 180,
+    systemCapacityKw: 5,
   });
   const [prediction, setPrediction] = useState<any>(null);
   const [optimization, setOptimization] = useState<any>(null);
@@ -62,6 +63,7 @@ export function SolarDashboard() {
         longitude: formData.longitude,
         tilt: formData.tilt,
         azimuth: formData.azimuth,
+        systemCapacityKw: formData.systemCapacityKw,
         userId: user?._id
       });
       setPrediction(result);
@@ -82,6 +84,7 @@ export function SolarDashboard() {
         longitude: formData.longitude,
         currentTilt: formData.tilt,
         currentAzimuth: formData.azimuth,
+        systemCapacityKw: formData.systemCapacityKw,
         userId: user?._id
       });
       setOptimization(result);
@@ -101,7 +104,8 @@ export function SolarDashboard() {
       latitude: 23.02,
       longitude: 72.57,
       tilt: 25,
-      azimuth: 180
+      azimuth: 180,
+      systemCapacityKw: 5,
     });
     toast.info("Results cleared");
   };
@@ -113,9 +117,9 @@ export function SolarDashboard() {
     }
 
     const csvContent = [
-      "Timestamp,Latitude,Longitude,Tilt,Azimuth,Predicted Power (kW),Temperature,Humidity,Cloud Cover,Solar Irradiance",
+      "Timestamp,Latitude,Longitude,Tilt,Azimuth,System Capacity (kW),Predicted Power (kW),Temperature,Humidity,Cloud Cover,Solar Irradiance",
       ...userPredictions.map(p => 
-        `${p.timestamp},${p.latitude},${p.longitude},${p.tilt},${p.azimuth},${p.predictedPowerKw.toFixed(2)},${p.weatherData.temperature},${p.weatherData.humidity},${p.weatherData.cloudCover},${p.weatherData.solarIrradiance}`
+        `${p.timestamp},${p.latitude},${p.longitude},${p.tilt},${p.azimuth},${p.systemCapacityKw ?? ""},${p.predictedPowerKw.toFixed(2)},${p.weatherData.temperature},${p.weatherData.humidity},${p.weatherData.cloudCover},${p.weatherData.solarIrradiance}`
       )
     ].join("\n");
 
@@ -223,6 +227,21 @@ export function SolarDashboard() {
                 </div>
               </div>
 
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="capacity">System Capacity (kW)</Label>
+                  <Input
+                    id="capacity"
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    value={formData.systemCapacityKw}
+                    onChange={(e) => handleInputChange("systemCapacityKw", e.target.value)}
+                    placeholder="e.g. 486.5"
+                  />
+                </div>
+              </div>
+
               <Separator />
 
               <div className="space-y-3">
@@ -311,6 +330,12 @@ export function SolarDashboard() {
                           {prediction.weatherData.solarIrradiance.toFixed(0)}
                         </div>
                         <div className="text-sm text-muted-foreground">W/m² Irradiance</div>
+                      </div>
+                      <div className="text-center p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 rounded-lg border">
+                        <div className="text-2xl font-bold">
+                          {formData.systemCapacityKw} kW
+                        </div>
+                        <div className="text-sm text-muted-foreground">System Capacity</div>
                       </div>
                     </div>
 

@@ -39,6 +39,8 @@ const schema = defineSchema(
       longitude: v.number(),
       tilt: v.number(),
       azimuth: v.number(),
+      // Add system capacity for accurate scaling of predictions
+      systemCapacityKw: v.number(),
       predictedPowerKw: v.number(),
       timestamp: v.string(),
       weatherData: v.object({

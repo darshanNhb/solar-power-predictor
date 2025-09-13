@@ -41,6 +41,8 @@ export const storePrediction = internalMutation({
     longitude: v.number(),
     tilt: v.number(),
     azimuth: v.number(),
+    // Include capacity
+    systemCapacityKw: v.number(),
     predictedPowerKw: v.number(),
     timestamp: v.string(),
     weatherData: v.object({

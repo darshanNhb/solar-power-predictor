@@ -69,9 +69,7 @@ function calculateSolarGeometry(lat: number, lon: number, tilt: number, azimuth:
 
 // ML Model prediction (simplified version of your trained model)
 function predictPowerOutput(features: any) {
-  // This is a simplified version - in production you'd load your actual joblib model
-  // For now, using a simplified calculation based on key factors
-  
+  // Capacity-aware power calculation
   const {
     temperature,
     humidity,
@@ -79,30 +77,38 @@ function predictPowerOutput(features: any) {
     cloudCover,
     zenith,
     angleOfIncidence,
-    tilt
+    systemCapacityKw,
   } = features;
-  
-  // Base power calculation
-  let basePower = (solarIrradiance / 1000) * 5; // Assuming 5kW panel capacity
-  
-  // Temperature coefficient (panels lose efficiency in heat)
-  const tempCoeff = 1 - (temperature - 25) * 0.004;
+
+  // Fallbacks to avoid NaN/undefined cases
+  const irradiance = typeof solarIrradiance === "number" ? solarIrradiance : 0;
+  const temp = typeof temperature === "number" ? temperature : 25;
+  const cover = typeof cloudCover === "number" ? cloudCover : 0;
+  const z = typeof zenith === "number" ? zenith : 90;
+  const inc = typeof angleOfIncidence === "number" ? angleOfIncidence : 90;
+  const capacity = typeof systemCapacityKw === "number" ? systemCapacityKw : 5;
+
+  // Base power for the given capacity (kW) from plane-of-array irradiance
+  let basePower = (irradiance / 1000) * capacity;
+
+  // Temperature coefficient (panels lose efficiency in heat), clamp minimum
+  const tempCoeff = 1 - (temp - 25) * 0.004;
   basePower *= Math.max(0.5, tempCoeff);
-  
+
   // Cloud cover reduction
-  basePower *= (1 - cloudCover / 100 * 0.8);
-  
+  basePower *= 1 - (cover / 100) * 0.8;
+
   // Solar angle efficiency
-  const angleEfficiency = Math.cos(angleOfIncidence * Math.PI / 180);
-  basePower *= Math.max(0, angleEfficiency);
-  
-  // Zenith angle (sun height) factor
-  if (zenith > 85) basePower *= 0.1; // Very low sun
-  else if (zenith > 70) basePower *= 0.5;
-  
-  // Humidity factor (slight reduction)
-  basePower *= (1 - humidity / 100 * 0.1);
-  
+  const angleEfficiency = Math.max(0, Math.cos((inc * Math.PI) / 180));
+  basePower *= angleEfficiency;
+
+  // Zenith angle factor (low sun penalty)
+  if (z > 85) basePower *= 0.1;
+  else if (z > 70) basePower *= 0.5;
+
+  // Humidity slight reduction
+  basePower *= 1 - ((typeof humidity === "number" ? humidity : 0) / 100) * 0.1;
+
   return Math.max(0, basePower);
 }
 
@@ -112,22 +118,21 @@ export const predictSolarPower = action({
     longitude: v.number(),
     tilt: v.number(),
     azimuth: v.number(),
-    userId: v.optional(v.id("users"))
+    // New: capacity
+    systemCapacityKw: v.number(),
+    userId: v.optional(v.id("users")),
   },
   handler: async (ctx, args): Promise<any> => {
     try {
-      // Get current weather
       const weather = await getCurrentWeather(args.latitude, args.longitude);
-      
-      // Calculate solar geometry
+
       const solarGeometry = calculateSolarGeometry(
-        args.latitude, 
-        args.longitude, 
-        args.tilt, 
+        args.latitude,
+        args.longitude,
+        args.tilt,
         args.azimuth
       );
-      
-      // Prepare features for ML model
+
       const features = {
         temperature: weather.temperature,
         humidity: weather.humidity,
@@ -135,38 +140,39 @@ export const predictSolarPower = action({
         cloudCover: weather.cloudCover,
         zenith: solarGeometry.zenith,
         angleOfIncidence: solarGeometry.angleOfIncidence,
-        tilt: args.tilt,
-        azimuth: args.azimuth,
+        systemCapacityKw: args.systemCapacityKw,
         pressure: weather.pressure,
-        windSpeed: weather.windSpeed
+        windSpeed: weather.windSpeed,
       };
-      
-      // Predict power output
+
       const predictedPower = predictPowerOutput(features);
-      
-      // Store prediction in database
-      const predictionId: any = await ctx.runMutation(internal.solarQueries.storePrediction, {
-        userId: args.userId,
-        latitude: args.latitude,
-        longitude: args.longitude,
-        tilt: args.tilt,
-        azimuth: args.azimuth,
-        predictedPowerKw: predictedPower,
-        timestamp: weather.timestamp,
-        weatherData: {
-          temperature: weather.temperature,
-          humidity: weather.humidity,
-          pressure: weather.pressure,
-          cloudCover: weather.cloudCover,
-          windSpeed: weather.windSpeed,
-          solarIrradiance: weather.solarIrradiance,
-        },
-        solarGeometry: {
-          zenith: solarGeometry.zenith,
-          angleOfIncidence: solarGeometry.angleOfIncidence,
+
+      const predictionId: any = await ctx.runMutation(
+        internal.solarQueries.storePrediction,
+        {
+          userId: args.userId,
+          latitude: args.latitude,
+          longitude: args.longitude,
+          tilt: args.tilt,
+          azimuth: args.azimuth,
+          systemCapacityKw: args.systemCapacityKw,
+          predictedPowerKw: predictedPower,
+          timestamp: weather.timestamp,
+          weatherData: {
+            temperature: weather.temperature,
+            humidity: weather.humidity,
+            pressure: weather.pressure,
+            cloudCover: weather.cloudCover,
+            windSpeed: weather.windSpeed,
+            solarIrradiance: weather.solarIrradiance,
+          },
+          solarGeometry: {
+            zenith: solarGeometry.zenith,
+            angleOfIncidence: solarGeometry.angleOfIncidence,
+          },
         }
-      });
-      
+      );
+
       return {
         predictionId,
         predictedPowerKw: predictedPower,
@@ -182,7 +188,7 @@ export const predictSolarPower = action({
         solarGeometry: {
           zenith: solarGeometry.zenith,
           angleOfIncidence: solarGeometry.angleOfIncidence,
-        }
+        },
       };
     } catch (error) {
       console.error("Solar prediction error:", error);
@@ -197,21 +203,28 @@ export const optimizePanelConfiguration = action({
     longitude: v.number(),
     currentTilt: v.number(),
     currentAzimuth: v.number(),
-    userId: v.optional(v.id("users"))
+    // New: capacity
+    systemCapacityKw: v.number(),
+    userId: v.optional(v.id("users")),
   },
   handler: async (ctx, args): Promise<any> => {
     try {
       let maxPower = 0;
       let optimalTilt = args.currentTilt;
       let optimalAzimuth = args.currentAzimuth;
-      
+
       // Test different tilt angles (0-60 degrees)
       for (let tilt = 0; tilt <= 60; tilt += 5) {
-        // Test different azimuth angles (120-240 degrees, focusing on south)
+        // Test different azimuth angles (120-240 degrees)
         for (let azimuth = 120; azimuth <= 240; azimuth += 10) {
           const weather = await getCurrentWeather(args.latitude, args.longitude);
-          const solarGeometry = calculateSolarGeometry(args.latitude, args.longitude, tilt, azimuth);
-          
+          const solarGeometry = calculateSolarGeometry(
+            args.latitude,
+            args.longitude,
+            tilt,
+            azimuth
+          );
+
           const features = {
             temperature: weather.temperature,
             humidity: weather.humidity,
@@ -219,14 +232,13 @@ export const optimizePanelConfiguration = action({
             cloudCover: weather.cloudCover,
             zenith: solarGeometry.zenith,
             angleOfIncidence: solarGeometry.angleOfIncidence,
-            tilt: tilt,
-            azimuth: azimuth,
+            systemCapacityKw: args.systemCapacityKw,
             pressure: weather.pressure,
-            windSpeed: weather.windSpeed
+            windSpeed: weather.windSpeed,
           };
-          
+
           const power = predictPowerOutput(features);
-          
+
           if (power > maxPower) {
             maxPower = power;
             optimalTilt = tilt;
@@ -234,10 +246,17 @@ export const optimizePanelConfiguration = action({
           }
         }
       }
-      
-      // Calculate current configuration power
-      const currentWeather = await getCurrentWeather(args.latitude, args.longitude);
-      const currentGeometry = calculateSolarGeometry(args.latitude, args.longitude, args.currentTilt, args.currentAzimuth);
+
+      const currentWeather = await getCurrentWeather(
+        args.latitude,
+        args.longitude
+      );
+      const currentGeometry = calculateSolarGeometry(
+        args.latitude,
+        args.longitude,
+        args.currentTilt,
+        args.currentAzimuth
+      );
       const currentFeatures = {
         temperature: currentWeather.temperature,
         humidity: currentWeather.humidity,
@@ -245,36 +264,38 @@ export const optimizePanelConfiguration = action({
         cloudCover: currentWeather.cloudCover,
         zenith: currentGeometry.zenith,
         angleOfIncidence: currentGeometry.angleOfIncidence,
-        tilt: args.currentTilt,
-        azimuth: args.currentAzimuth,
+        systemCapacityKw: args.systemCapacityKw,
         pressure: currentWeather.pressure,
-        windSpeed: currentWeather.windSpeed
+        windSpeed: currentWeather.windSpeed,
       };
       const currentPower = predictPowerOutput(currentFeatures);
-      
-      const improvementPercentage = ((maxPower - currentPower) / currentPower) * 100;
-      
-      // Store optimization result
-      const optimizationId: any = await ctx.runMutation(internal.solarQueries.storeOptimization, {
-        userId: args.userId,
-        latitude: args.latitude,
-        longitude: args.longitude,
-        optimalTilt,
-        optimalAzimuth,
-        maxPowerKw: maxPower,
-        currentTilt: args.currentTilt,
-        currentAzimuth: args.currentAzimuth,
-        currentPowerKw: currentPower,
-        improvementPercentage
-      });
-      
+
+      const improvementPercentage =
+        currentPower > 0 ? ((maxPower - currentPower) / currentPower) * 100 : 0;
+
+      const optimizationId: any = await ctx.runMutation(
+        internal.solarQueries.storeOptimization,
+        {
+          userId: args.userId,
+          latitude: args.latitude,
+          longitude: args.longitude,
+          optimalTilt,
+          optimalAzimuth,
+          maxPowerKw: maxPower,
+          currentTilt: args.currentTilt,
+          currentAzimuth: args.currentAzimuth,
+          currentPowerKw: currentPower,
+          improvementPercentage,
+        }
+      );
+
       return {
         optimizationId,
         optimalTilt,
         optimalAzimuth,
         maxPowerKw: maxPower,
         currentPowerKw: currentPower,
-        improvementPercentage
+        improvementPercentage,
       };
     } catch (error) {
       console.error("Optimization error:", error);
