@@ -37,7 +37,6 @@ import {
   TableHeader,
   TableRow
 } from "@/components/ui/table";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export function SolarDashboard() {
   const { user } = useAuth();
@@ -91,7 +90,6 @@ export function SolarDashboard() {
         azimuth: formData.azimuth,
         systemCapacityKw: formData.systemCapacityKw,
         userId: user?._id,
-        calculationMode,
         calibrationFactor: formData.calibrationFactor,
       });
       setPrediction(result);
@@ -219,23 +217,6 @@ export function SolarDashboard() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* Calculation Mode */}
-              <div>
-                <Label htmlFor="mode">Calculation Mode</Label>
-                <Select
-                  value={calculationMode}
-                  onValueChange={() => setCalculationMode("simple")}
-                >
-                  <SelectTrigger id="mode" className="w-full">
-                    <SelectValue placeholder="Select mode" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="advanced">Advanced (realistic)</SelectItem>
-                    <SelectItem value="simple">Simple (capacity × irradiance)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="latitude">Latitude</Label>
