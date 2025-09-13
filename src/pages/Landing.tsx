@@ -17,6 +17,7 @@ import {
   CheckCircle,
   Sparkles
 } from "lucide-react";
+import Navbar from "@/components/Navbar";
 
 export default function Landing() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -63,31 +64,9 @@ export default function Landing() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-yellow-50 via-orange-50 to-red-50 dark:from-yellow-950 dark:via-orange-950 dark:to-red-950">
-      {/* Navigation */}
-      <nav className="border-b bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <motion.div 
-            className="flex items-center gap-3 cursor-pointer"
-            onClick={() => navigate("/")}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <div className="p-2 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-lg">
-              <Sun className="h-6 w-6 text-white" />
-            </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-yellow-600 to-orange-600 bg-clip-text text-transparent">
-              SolarPredict AI
-            </span>
-          </motion.div>
-          
-          <Button onClick={handleGetStarted} disabled={isLoading}>
-            {isAuthenticated ? "Dashboard" : "Get Started"}
-            <ArrowRight className="h-4 w-4 ml-2" />
-          </Button>
-        </div>
-      </nav>
-
+    <div className="min-h-screen bg-white">
+      <Navbar />
+      
       {/* Hero Section */}
       <section className="container mx-auto px-4 py-20">
         <motion.div

@@ -42,96 +42,92 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
-/* Solar-themed color scheme */
+/* Solar-themed color scheme -> Updated to White/Black/Orange */
 :root {
   --radius: 0.75rem;
 
   /* Base + neutrals */
-  --background: #F7F9FB;              /* Off-White */
-  --foreground: #2C3E50;              /* Charcoal Gray (text) */
+  --background: #ffffff;              /* White */
+  --foreground: #000000;              /* Black text */
   --card: #ffffff;
-  --card-foreground: #2C3E50;
+  --card-foreground: #000000;
   --popover: #ffffff;
-  --popover-foreground: #2C3E50;
+  --popover-foreground: #000000;
 
   /* Brand */
-  --primary: #2C3E50;                 /* Charcoal Gray primary */
-  --primary-foreground: #F7F9FB;      /* Off-White text on primary */
-  --secondary: #ECF0F1;               /* Light Gray */
-  --secondary-foreground: #2C3E50;
+  --primary: #f97316;                 /* Orange for buttons/highlights */
+  --primary-foreground: #ffffff;      /* white text on orange */
+  --secondary: #000000;               /* Black */
+  --secondary-foreground: #ffffff;
 
-  /* Support */
-  --muted: #ECF0F1;
-  --muted-foreground: #4A5B6D;        /* softer charcoal */
-  --accent: #2ECC71;                  /* Muted Teal */
-  --accent-foreground: #0f1a22;       /* deep charcoal for contrast */
-  --destructive: #c0392b;
+  /* Support (green/red/blue accents) */
+  --muted: #ecf0f1;
+  --muted-foreground: #111827;
+  --accent: #2ecc71;                  /* Green success */
+  --accent-foreground: #0f1a22;
+  --destructive: #ef4444;             /* Red error */
+  --ring: #3b82f6;                    /* Blue info/focus */
 
   /* UI */
-  --border: #E2E8F0;
-  --input: #E2E8F0;
-  --ring: #2ECC71;                    /* focus ring in teal */
+  --border: #e5e7eb;
+  --input: #e5e7eb;
 
-  /* Charts (teal + charcoal variations) */
-  --chart-1: #2ECC71;
-  --chart-2: #27AE60;
-  --chart-3: #16A085;
-  --chart-4: #1ABC9C;
-  --chart-5: #2C3E50;
+  /* Charts */
+  --chart-1: #f97316; /* orange */
+  --chart-2: #3b82f6; /* blue */
+  --chart-3: #22c55e; /* green */
+  --chart-4: #ef4444; /* red */
+  --chart-5: #111827; /* black-ish */
 
   /* Sidebar */
-  --sidebar: #F7F9FB;
-  --sidebar-foreground: #2C3E50;
-  --sidebar-primary: #2C3E50;
-  --sidebar-primary-foreground: #F7F9FB;
-  --sidebar-accent: #ECF0F1;
-  --sidebar-accent-foreground: #2C3E50;
-  --sidebar-border: #E2E8F0;
-  --sidebar-ring: #2ECC71;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #000000;
+  --sidebar-primary: #f97316;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #ecf0f1;
+  --sidebar-accent-foreground: #000000;
+  --sidebar-border: #e5e7eb;
+  --sidebar-ring: #f97316;
 }
 
 .dark {
-  --background: #111922;              /* deep charcoal */
-  --foreground: #F7F9FB;
-  --card: #172330;
-  --card-foreground: #F7F9FB;
-  --popover: #172330;
-  --popover-foreground: #F7F9FB;
+  /* Keep readable contrast in dark */
+  --background: #0b0b0b;
+  --foreground: #ffffff;
+  --card: #111111;
+  --card-foreground: #ffffff;
+  --popover: #111111;
+  --popover-foreground: #ffffff;
 
-  /* Brand */
-  --primary: #2ECC71;                 /* make teal primary in dark for contrast */
-  --primary-foreground: #0F1A22;      /* deep charcoal text on teal */
-  --secondary: #1f2c3a;
-  --secondary-foreground: #F7F9FB;
+  --primary: #f97316;
+  --primary-foreground: #0b0b0b;
+  --secondary: #ffffff;
+  --secondary-foreground: #0b0b0b;
 
-  /* Support */
-  --muted: #1f2c3a;
-  --muted-foreground: #B8C4CF;
-  --accent: #27AE60;
-  --accent-foreground: #0F1A22;
-  --destructive: #e74c3c;
+  --muted: #1a1a1a;
+  --muted-foreground: #d1d5db;
+  --accent: #22c55e;
+  --accent-foreground: #0b0b0b;
+  --destructive: #ef4444;
 
-  /* UI */
-  --border: #243545;
-  --input: #243545;
-  --ring: #2ECC71;
+  --border: #1f2937;
+  --input: #1f2937;
+  --ring: #3b82f6;
 
-  /* Charts */
-  --chart-1: #2ECC71;
-  --chart-2: #27AE60;
-  --chart-3: #16A085;
-  --chart-4: #1ABC9C;
-  --chart-5: #95A5A6;
+  --chart-1: #f97316;
+  --chart-2: #60a5fa;
+  --chart-3: #22c55e;
+  --chart-4: #f87171;
+  --chart-5: #f3f4f6;
 
-  /* Sidebar */
-  --sidebar: #141f2a;
-  --sidebar-foreground: #F7F9FB;
-  --sidebar-primary: #2ECC71;
-  --sidebar-primary-foreground: #0F1A22;
-  --sidebar-accent: #1f2c3a;
-  --sidebar-accent-foreground: #F7F9FB;
-  --sidebar-border: #243545;
-  --sidebar-ring: #2ECC71;
+  --sidebar: #0b0b0b;
+  --sidebar-foreground: #ffffff;
+  --sidebar-primary: #f97316;
+  --sidebar-primary-foreground: #0b0b0b;
+  --sidebar-accent: #111111;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #1f2937;
+  --sidebar-ring: #f97316;
 }
 
 @layer base {
@@ -140,6 +136,10 @@
   }
   body {
     @apply bg-background text-foreground;
+    /* Center all text across the app */
+    @apply text-center;
+    /* Add top padding because navbar is fixed */
+    padding-top: 64px;
   }
   button:not([disabled]),
   [role="button"]:not([disabled]) {

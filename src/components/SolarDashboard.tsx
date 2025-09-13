@@ -28,9 +28,16 @@ import {
 } from "lucide-react";
 import { PredictionChart } from "./PredictionChart";
 import { OptimizationResults } from "./OptimizationResults";
+import { useLocation, useNavigate } from "react-router";
 
 export function SolarDashboard() {
   const { user } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState<string>(() => {
+    const hash = location.hash.replace("#", "");
+    return hash === "visuals" ? "chart" : hash === "history" ? "history" : "prediction";
+  });
   const [formData, setFormData] = useState({
     latitude: 23.02,
     longitude: 72.57,
@@ -163,6 +170,7 @@ export function SolarDashboard() {
 
   return (
     <div className="container mx-auto p-6 max-w-7xl">
+      <div id="prediction" />
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -398,12 +406,17 @@ export function SolarDashboard() {
               <OptimizationResults optimization={optimization} />
             )}
 
-            <Tabs defaultValue="history" className="w-full">
+            <Tabs value={activeTab === "prediction" ? "history" : activeTab} onValueChange={(v) => {
+              const hash = v === "chart" ? "visuals" : "history";
+              setActiveTab(v);
+              navigate(`/dashboard#${hash}`, { replace: true });
+            }} className="w-full">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="history">Prediction History</TabsTrigger>
                 <TabsTrigger value="chart">Visualization</TabsTrigger>
               </TabsList>
               
+              <div id="history" />
               <TabsContent value="history" className="space-y-4">
                 <Card>
                   <CardHeader>
@@ -460,6 +473,7 @@ export function SolarDashboard() {
                 </Card>
               </TabsContent>
               
+              <div id="visuals" />
               <TabsContent value="chart">
                 <PredictionChart predictions={userPredictions || []} />
               </TabsContent>
