@@ -157,6 +157,8 @@ export const predictSolarPower = action({
     userId: v.optional(v.id("users")),
     // Add: calculation mode (optional, default advanced)
     calculationMode: v.optional(v.string()),
+    // Optional calibration factor to align results to user's model
+    calibrationFactor: v.optional(v.number()),
   },
   handler: async (ctx, args): Promise<any> => {
     try {
@@ -185,7 +187,12 @@ export const predictSolarPower = action({
         | "simple"
         | "advanced";
 
-      const predictedPower = predictPowerOutput(features, mode);
+      const rawPower = predictPowerOutput(features, mode);
+      const factor =
+        typeof args.calibrationFactor === "number" && isFinite(args.calibrationFactor)
+          ? Math.max(0, args.calibrationFactor)
+          : 1.0;
+      const predictedPower = rawPower * factor;
 
       const predictionId: any = await ctx.runMutation(
         internal.solarQueries.storePrediction,

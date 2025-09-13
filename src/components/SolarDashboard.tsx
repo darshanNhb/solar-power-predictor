@@ -47,12 +47,15 @@ export function SolarDashboard() {
     tilt: 25,
     azimuth: 180,
     systemCapacityKw: 5,
+    // Add calibration factor to align output to user's model
+    calibrationFactor: 1.0,
   });
+  // Default to simple to align closely with user's model by default
+  const [calculationMode, setCalculationMode] = useState<"advanced" | "simple">("simple");
   const [prediction, setPrediction] = useState<any>(null);
   const [optimization, setOptimization] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isOptimizing, setIsOptimizing] = useState(false);
-  const [calculationMode, setCalculationMode] = useState<"advanced" | "simple">("advanced");
 
   const predictSolarPower = useAction(api.solarPrediction.predictSolarPower);
   const optimizePanelConfiguration = useAction(api.solarPrediction.optimizePanelConfiguration);
@@ -89,6 +92,7 @@ export function SolarDashboard() {
         systemCapacityKw: formData.systemCapacityKw,
         userId: user?._id,
         calculationMode,
+        calibrationFactor: formData.calibrationFactor,
       });
       setPrediction(result);
       toast.success("Solar power prediction completed!");
@@ -130,6 +134,8 @@ export function SolarDashboard() {
       tilt: 25,
       azimuth: 180,
       systemCapacityKw: 5,
+      // Add missing field to match formData shape
+      calibrationFactor: 1.0,
     });
     toast.info("Results cleared");
   };
@@ -293,6 +299,18 @@ export function SolarDashboard() {
                     value={formData.systemCapacityKw}
                     onChange={(e) => handleInputChange("systemCapacityKw", e.target.value)}
                     placeholder="e.g. 486.5"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="calibration">Calibration Factor</Label>
+                  <Input
+                    id="calibration"
+                    type="number"
+                    step="0.001"
+                    min="0"
+                    value={formData.calibrationFactor}
+                    onChange={(e) => handleInputChange("calibrationFactor", e.target.value)}
+                    placeholder="e.g. 0.973"
                   />
                 </div>
               </div>
