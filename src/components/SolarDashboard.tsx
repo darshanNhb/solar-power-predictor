@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { useAction, useQuery } from "convex/react";
+import { useAction, useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
@@ -47,6 +47,8 @@ export function SolarDashboard() {
   const optimizePanelConfiguration = useAction(api.solarPrediction.optimizePanelConfiguration);
   const userPredictions = useQuery(api.solarQueries.getUserPredictions, { limit: 20 });
   const userOptimizations = useQuery(api.solarQueries.getUserOptimizations, { limit: 5 });
+  const deletePrediction = useMutation(api.solarQueries.deletePrediction);
+  const clearUserPredictions = useMutation(api.solarQueries.clearUserPredictions);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({
@@ -94,6 +96,32 @@ export function SolarDashboard() {
       console.error(error);
     } finally {
       setIsOptimizing(false);
+    }
+  };
+
+  const handleDeletePrediction = async (id: string) => {
+    try {
+      await deletePrediction({ id: id as any });
+      toast.success("Prediction deleted");
+    } catch (e) {
+      toast.error("Failed to delete prediction");
+      console.error(e);
+    }
+  };
+
+  const handleClearHistory = async () => {
+    if (!userPredictions?.length) {
+      toast.info("No predictions to clear");
+      return;
+    }
+    const ok = window.confirm("Clear all prediction history? This cannot be undone.");
+    if (!ok) return;
+    try {
+      await clearUserPredictions({});
+      toast.success("Prediction history cleared");
+    } catch (e) {
+      toast.error("Failed to clear history");
+      console.error(e);
     }
   };
 
@@ -154,6 +182,10 @@ export function SolarDashboard() {
             <Button variant="outline" onClick={downloadCSV} disabled={!userPredictions?.length}>
               <Download className="h-4 w-4 mr-2" />
               Export CSV
+            </Button>
+            <Button variant="outline" onClick={handleClearHistory} disabled={!userPredictions?.length}>
+              <RotateCcw className="h-4 w-4 mr-2" />
+              Clear History
             </Button>
             <Button variant="outline" onClick={handleClear}>
               <RotateCcw className="h-4 w-4 mr-2" />
@@ -404,8 +436,17 @@ export function SolarDashboard() {
                                 </div>
                               </div>
                             </div>
-                            <div className="text-xs text-muted-foreground">
-                              {new Date(pred.timestamp).toLocaleString()}
+                            <div className="flex items-center gap-3">
+                              <div className="text-xs text-muted-foreground">
+                                {new Date(pred.timestamp).toLocaleString()}
+                              </div>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDeletePrediction(pred._id)}
+                              >
+                                Delete
+                              </Button>
                             </div>
                           </motion.div>
                         ))}

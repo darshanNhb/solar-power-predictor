@@ -80,3 +80,35 @@ export const storeOptimization = internalMutation({
     return await ctx.db.insert("optimizations", args);
   },
 });
+
+export const deletePrediction = mutation({
+  args: { id: v.id("predictions") },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    if (!user) throw new Error("Not authenticated");
+
+    const doc = await ctx.db.get(args.id);
+    if (!doc) throw new Error("Prediction not found");
+    if (doc.userId && doc.userId !== user._id) throw new Error("Forbidden");
+
+    await ctx.db.delete(args.id);
+    return null;
+  },
+});
+
+export const clearUserPredictions = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const user = await getCurrentUser(ctx);
+    if (!user) throw new Error("Not authenticated");
+
+    const q = ctx.db
+      .query("predictions")
+      .withIndex("by_user", (q) => q.eq("userId", user._id));
+
+    for await (const row of q) {
+      await ctx.db.delete(row._id);
+    }
+    return null;
+  },
+});
