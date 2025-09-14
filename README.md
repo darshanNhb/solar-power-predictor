@@ -20,7 +20,7 @@ Contributors
 
 👩‍💻 Yashvi Hingrajiya
 
-👩‍💻 Vasavi Chaudhary
+👩‍💻 Vasavi Chaudhari
 
 🌟 Overview
 
